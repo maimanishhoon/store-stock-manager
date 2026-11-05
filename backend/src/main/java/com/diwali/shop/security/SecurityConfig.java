@@ -61,7 +61,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/auth/**", "/api/public/**", "/ws/**", "/uploads/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/public/**", "/ws/**", "/uploads/**", "/health").permitAll()
                 // Admin-only management endpoints
                 .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
