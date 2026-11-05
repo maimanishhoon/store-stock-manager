@@ -40,6 +40,8 @@ public class OrderService {
         long seq = orderRepository.findMaxId() + 1;
         return "ORD-" + datePrefix + "-" + seq;
     }
+
+    public List<Order> getAllOrders() {
         return orderRepository.findAllByOrderByCreatedAtDesc();
     }
 
