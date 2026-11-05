@@ -1,12 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.port === '5173'
-    ? 'http://localhost:8080'
-    : typeof window !== 'undefined'
-    ? window.location.origin
-    : 'http://localhost:8080');
+// VITE_API_URL is baked in at build time by Vite.
+// In production on Railway, set VITE_API_URL=https://your-backend.up.railway.app
+// In local dev (port 5173), the Vite proxy handles /api so baseURL can be empty.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
@@ -15,7 +12,7 @@ const axiosClient = axios.create({
   },
 });
 
-// Interceptor to attach JWT token to every request
+// Attach JWT token to every request
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('diwali_shop_token');
@@ -27,12 +24,11 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor to handle unauthorized 401s
+// Handle 401 responses
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // If unauthorized and not already on login page, remove token
       if (!window.location.pathname.includes('/login')) {
         localStorage.removeItem('diwali_shop_token');
         localStorage.removeItem('diwali_shop_user');

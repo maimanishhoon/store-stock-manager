@@ -1,8 +1,9 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
+# Layer cache: only re-downloads deps when pom.xml changes
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve -B -q
 
 COPY src ./src
 RUN mvn clean package -DskipTests -B

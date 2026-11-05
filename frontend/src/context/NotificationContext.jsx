@@ -52,13 +52,8 @@ export const NotificationProvider = ({ children }) => {
     fetchNotifications();
 
     // Setup STOMP WebSocket client
-    const wsBase =
-      import.meta.env.VITE_API_URL ||
-      (typeof window !== 'undefined' && window.location.port === '5173'
-        ? 'http://localhost:8080'
-        : typeof window !== 'undefined'
-        ? window.location.origin
-        : 'http://localhost:8080');
+    // VITE_API_URL is baked in at build time. Empty string means same origin (local dev via Vite proxy).
+    const wsBase = import.meta.env.VITE_API_URL || '';
 
     const client = new Client({
       webSocketFactory: () => new SockJS(`${wsBase}/ws`),
