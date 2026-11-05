@@ -1,0 +1,43 @@
+# ==========================================
+# 🪔 Diwali Shop Manager - Render Blueprint
+# Docs: https://render.com/docs/blueprint-spec
+# ==========================================
+services:
+  # 1. Spring Boot Backend Web Service
+  - type: web
+    name: diwali-shop-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        sync: false # Set to your MySQL connection string (e.g. from Aiven/Railway/CleverCloud or Render PostgreSQL)
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # 2. React Vite Frontend Static Site
+  - type: web
+    name: diwali-shop-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    region: oregon
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: diwali-shop-backend
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

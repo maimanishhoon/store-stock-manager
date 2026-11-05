@@ -1,0 +1,38 @@
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Backend Build & Dependencies
+backend/target/
+backend/target/*
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.class
+*.jar
+*.war
+
+# Frontend Dependencies & Build
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secrets
+.env
+*.log
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary tools & archives
+tools/apache-maven-3.9.6/

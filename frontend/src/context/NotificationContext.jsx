@@ -52,8 +52,16 @@ export const NotificationProvider = ({ children }) => {
     fetchNotifications();
 
     // Setup STOMP WebSocket client
+    const wsBase =
+      import.meta.env.VITE_API_URL ||
+      (typeof window !== 'undefined' && window.location.port === '5173'
+        ? 'http://localhost:8080'
+        : typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost:8080');
+
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/ws`),
+      webSocketFactory: () => new SockJS(`${wsBase}/ws`),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
