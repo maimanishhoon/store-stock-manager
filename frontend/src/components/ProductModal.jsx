@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productApi } from '../api/productApi';
+import { getImageUrl } from '../utils/imageUrl';
 import { X, Upload, Camera } from 'lucide-react';
 
 const ProductModal = ({ isOpen, onClose, onSave, product = null, categories = [] }) => {
@@ -130,7 +131,7 @@ const ProductModal = ({ isOpen, onClose, onSave, product = null, categories = []
                 form.imageUrl ? 'border-amber-300 bg-amber-50/30' : 'border-gray-300 bg-gray-50 hover:bg-amber-50/30 hover:border-amber-300'
               }`}>
                 {form.imageUrl ? (
-                  <img src={form.imageUrl} alt="preview" className="w-full h-full object-cover rounded-2xl" />
+                  <img src={getImageUrl(form.imageUrl)} alt="preview" className="w-full h-full object-cover rounded-2xl" />
                 ) : (
                   <>
                     <Camera className="w-8 h-8 text-gray-400 mb-1" />

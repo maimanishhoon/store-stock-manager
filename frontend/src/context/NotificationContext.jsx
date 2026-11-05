@@ -53,7 +53,7 @@ export const NotificationProvider = ({ children }) => {
 
     // Setup STOMP WebSocket client
     // VITE_API_URL is baked in at build time. Empty string means same origin (local dev via Vite proxy).
-    const wsBase = import.meta.env.VITE_API_URL || '';
+    const wsBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
     const client = new Client({
       webSocketFactory: () => new SockJS(`${wsBase}/ws`),

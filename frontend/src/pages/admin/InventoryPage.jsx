@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { productApi } from '../../api/productApi';
 import { inventoryApi } from '../../api/inventoryApi';
+import { getImageUrl } from '../../utils/imageUrl';
 import ProductModal from '../../components/ProductModal';
 import StockAdjustModal from '../../components/StockAdjustModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -129,7 +130,7 @@ const InventoryPage = () => {
                 {/* Image */}
                 <div className="relative h-40 bg-amber-50 overflow-hidden">
                   {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name}
+                    <img src={getImageUrl(p.imageUrl)} alt={p.name}
                       className="w-full h-full object-cover hover:scale-105 transition duration-300"
                       onError={(e) => { e.target.style.display = 'none'; }} />
                   ) : (

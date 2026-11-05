@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { publicApi } from '../../api/publicApi';
+import { getImageUrl } from '../../utils/imageUrl';
 import {
   Sparkles,
   ShoppingBag,
@@ -373,7 +374,7 @@ const CustomerStorePage = () => {
                   <div className="relative aspect-4/3 bg-amber-50/50 overflow-hidden">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl}
+                        src={getImageUrl(product.imageUrl)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                         loading="lazy"

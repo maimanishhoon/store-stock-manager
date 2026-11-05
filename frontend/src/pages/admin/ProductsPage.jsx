@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productApi } from '../../api/productApi';
+import { getImageUrl } from '../../utils/imageUrl';
 import ProductModal from '../../components/ProductModal';
 import DiscountModal from '../../components/DiscountModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -218,7 +219,7 @@ const ProductsPage = () => {
                   <div className="relative h-44 bg-gray-100 overflow-hidden">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl}
+                        src={getImageUrl(product.imageUrl)}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         onError={(e) => {
@@ -364,7 +365,7 @@ const ProductsPage = () => {
                   <tr key={product.id} className="hover:bg-gray-50/50">
                     <td className="px-5 py-3 font-medium text-gray-900 flex items-center space-x-3">
                       <img
-                        src={product.imageUrl || 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=500&auto=format&fit=crop&q=60'}
+                        src={getImageUrl(product.imageUrl) || 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=500&auto=format&fit=crop&q=60'}
                         alt={product.name}
                         className="w-9 h-9 rounded-lg object-cover border border-gray-200 flex-shrink-0"
                       />

@@ -3,7 +3,7 @@ import axios from 'axios';
 // VITE_API_URL is baked in at build time by Vite.
 // In production on Railway, set VITE_API_URL=https://your-backend.up.railway.app
 // In local dev (port 5173), the Vite proxy handles /api so baseURL can be empty.
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,

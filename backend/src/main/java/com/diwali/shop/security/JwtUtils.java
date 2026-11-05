@@ -2,6 +2,7 @@ package com.diwali.shop.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,21 @@ public class JwtUtils {
 
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    @PostConstruct
+    public void validateJwtSecret() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "CRITICAL CONFIGURATION ERROR: Mandatory environment variable 'JWT_SECRET' is not configured. " +
+                "Please set 'JWT_SECRET' in your Railway backend service Variables (must be at least 32 characters long)."
+            );
+        }
+        if (jwtSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                "CRITICAL CONFIGURATION ERROR: 'JWT_SECRET' must be at least 256 bits (32 bytes) long for HMAC-SHA256 signature algorithm."
+            );
+        }
+    }
 
     private Key getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
