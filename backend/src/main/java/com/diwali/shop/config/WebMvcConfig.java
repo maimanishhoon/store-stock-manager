@@ -19,8 +19,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        try {
+            java.nio.file.Files.createDirectories(uploadPath);
+        } catch (Exception ignored) {
+        }
+
+        String location = uploadPath.toUri().toString();
+        if (!location.endsWith("/")) {
+            location += "/";
+        }
+
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath.toString() + "/")
+                .addResourceLocations(location)
                 .setCacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic());
     }
 }

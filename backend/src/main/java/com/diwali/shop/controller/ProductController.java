@@ -113,6 +113,7 @@ public class ProductController {
     @PostMapping("/products/images/migrate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> migrateImages() {
+        imageOptimizationService.ensureSeedImagesExtracted();
         return ResponseEntity.ok(imageOptimizationService.migrateExistingImages());
     }
 }

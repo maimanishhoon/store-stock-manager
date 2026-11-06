@@ -52,6 +52,45 @@ public class ImageOptimizationService {
         } else {
             log.info("Scrimage using bundled WebP binary for platform");
         }
+
+        // Ensure uploads directory exists and extract bundled seed images if not present
+        ensureSeedImagesExtracted();
+    }
+
+    /**
+     * Seeds the uploads folder with default product image variants from classpath resources.
+     * Ensures all default products have real WebP and JPEG images available immediately upon container boot.
+     */
+    public void ensureSeedImagesExtracted() {
+        try {
+            Path targetUploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            if (!Files.exists(targetUploadPath)) {
+                Files.createDirectories(targetUploadPath);
+            }
+
+            org.springframework.core.io.support.PathMatchingResourcePatternResolver resolver =
+                    new org.springframework.core.io.support.PathMatchingResourcePatternResolver();
+            org.springframework.core.io.Resource[] resources = resolver.getResources("classpath:seed-uploads/*");
+
+            int extracted = 0;
+            for (org.springframework.core.io.Resource resource : resources) {
+                String filename = resource.getFilename();
+                if (filename != null && !filename.trim().isEmpty()) {
+                    Path dest = targetUploadPath.resolve(filename);
+                    if (!Files.exists(dest)) {
+                        try (InputStream is = resource.getInputStream()) {
+                            Files.copy(is, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            extracted++;
+                        }
+                    }
+                }
+            }
+            if (extracted > 0) {
+                log.info("Extracted {} seed images to uploads directory: {}", extracted, targetUploadPath);
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract seed images: {}", e.getMessage());
+        }
     }
 
     /**
@@ -124,6 +163,14 @@ public class ImageOptimizationService {
         ImmutableImage thumb = image.bound(THUMB_DIMENSION, THUMB_DIMENSION);
         Path thumbPath = uploadPath.resolve(baseName + "_thumb.webp");
         writeWebp(thumb, thumbPath);
+
+        // Also write high-res JPEG for maximum compatibility
+        try {
+            Path highResJpgPath = uploadPath.resolve(baseName + ".jpg");
+            ImageIO.write(highRes.awt(), "jpg", highResJpgPath.toFile());
+        } catch (Exception ex) {
+            log.debug("JPEG fallback generation skipped: {}", ex.getMessage());
+        }
 
         Map<String, String> result = new HashMap<>();
         result.put("imageUrl", "/uploads/" + baseName + ".webp");

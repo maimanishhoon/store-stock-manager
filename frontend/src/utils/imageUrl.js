@@ -46,12 +46,15 @@ export const getImageVariantUrl = (url, variant = 'card') => {
   // 3. Local /uploads/ images
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
   if (variant && variant !== 'original' && cleanPath.startsWith('/uploads/')) {
-    const dotIndex = cleanPath.lastIndexOf('.');
+    const qIndex = cleanPath.indexOf('?');
+    const pathWithoutQuery = qIndex > -1 ? cleanPath.substring(0, qIndex) : cleanPath;
+    const query = qIndex > -1 ? cleanPath.substring(qIndex) : '';
+    const dotIndex = pathWithoutQuery.lastIndexOf('.');
     if (dotIndex > 0) {
-      const basePath = cleanPath.substring(0, dotIndex);
+      const basePath = pathWithoutQuery.substring(0, dotIndex);
       // Avoid duplicate suffixing if already suffixed
       if (!basePath.endsWith('_thumb') && !basePath.endsWith('_card') && !basePath.endsWith('_detail')) {
-        const variantPath = `${basePath}_${variant}.webp`;
+        const variantPath = `${basePath}_${variant}.webp${query}`;
         return getImageUrl(variantPath);
       }
     }
