@@ -39,12 +39,6 @@ const LoginPage = () => {
     }
   };
 
-  const fillCredentials = (user, pass) => {
-    setUsername(user);
-    setPassword(pass);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-950 via-orange-900 to-red-900 p-4 relative overflow-hidden">
       {/* Decorative background diyas */}
@@ -89,7 +83,6 @@ const LoginPage = () => {
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => fillCredentials('admin', 'banwarilal321')}
               className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
                 username === 'admin'
                   ? 'border-amber-600 bg-amber-100 text-amber-900 ring-2 ring-amber-200'
@@ -102,7 +95,6 @@ const LoginPage = () => {
 
             <button
               type="button"
-              onClick={() => fillCredentials('packer', 'banwarilal')}
               className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
                 username === 'packer'
                   ? 'border-orange-600 bg-orange-100 text-orange-900 ring-2 ring-orange-200'
