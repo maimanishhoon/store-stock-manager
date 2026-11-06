@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { publicApi } from '../../api/publicApi';
 import { getImageUrl } from '../../utils/imageUrl';
+import OptimizedImage from '../../components/OptimizedImage';
 import {
   Sparkles,
   ShoppingBag,
@@ -449,7 +450,7 @@ const CustomerStorePage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {products.map((product) => {
+            {products.map((product, index) => {
               const qtyInCart = cart[product.id] || 0;
               const hasDiscount =
                 product.discountType &&
@@ -465,11 +466,13 @@ const CustomerStorePage = () => {
                   {/* Image container */}
                   <div className="relative aspect-4/3 bg-amber-50/50 overflow-hidden">
                     {product.imageUrl ? (
-                      <img
-                        src={getImageUrl(product.imageUrl)}
+                      <OptimizedImage
+                        src={product.imageUrl}
                         alt={product.name}
+                        variant="card"
+                        priority={index < 4}
+                        aspectRatio="4/3"
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-amber-300">

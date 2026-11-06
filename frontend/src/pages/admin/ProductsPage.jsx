@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { productApi } from '../../api/productApi';
 import { getImageUrl } from '../../utils/imageUrl';
+import OptimizedImage from '../../components/OptimizedImage';
 import ProductModal from '../../components/ProductModal';
 import DiscountModal from '../../components/DiscountModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -205,7 +206,7 @@ const ProductsPage = () => {
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {products.map((product) => {
+          {products.map((product, index) => {
             const hasDiscount = product.discountType && product.discountType !== 'NONE';
             return (
               <div
@@ -218,13 +219,12 @@ const ProductsPage = () => {
                   {/* Image & Badges Header */}
                   <div className="relative h-44 bg-gray-100 overflow-hidden">
                     {product.imageUrl ? (
-                      <img
-                        src={getImageUrl(product.imageUrl)}
+                      <OptimizedImage
+                        src={product.imageUrl}
                         alt={product.name}
+                        variant="card"
+                        priority={index < 4}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                        onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=500&auto=format&fit=crop&q=60';
-                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
@@ -364,10 +364,11 @@ const ProductsPage = () => {
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50/50">
                     <td className="px-5 py-3 font-medium text-gray-900 flex items-center space-x-3">
-                      <img
-                        src={getImageUrl(product.imageUrl) || 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=500&auto=format&fit=crop&q=60'}
+                      <OptimizedImage
+                        src={product.imageUrl}
                         alt={product.name}
-                        className="w-9 h-9 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                        variant="thumb"
+                        className="w-9 h-9 rounded-lg object-cover border border-gray-200 shrink-0"
                       />
                       <span className="line-clamp-1">{product.name}</span>
                     </td>

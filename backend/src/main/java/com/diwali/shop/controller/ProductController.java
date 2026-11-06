@@ -25,11 +25,14 @@ public class ProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepository;
+    private final com.diwali.shop.service.ImageOptimizationService imageOptimizationService;
 
     public ProductController(ProductService productService,
-                             CategoryRepository categoryRepository) {
+                             CategoryRepository categoryRepository,
+                             com.diwali.shop.service.ImageOptimizationService imageOptimizationService) {
         this.productService = productService;
         this.categoryRepository = categoryRepository;
+        this.imageOptimizationService = imageOptimizationService;
     }
 
     @GetMapping("/categories")
@@ -94,14 +97,22 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> uploadProductImage(@RequestParam("file") MultipartFile file) {
         try {
-            String imageUrl = productService.saveImageFile(file);
-            Map<String, String> response = new HashMap<>();
-            response.put("imageUrl", imageUrl);
-            return ResponseEntity.ok(response);
+            Map<String, String> variants = imageOptimizationService.processAndSaveImage(file);
+            return ResponseEntity.ok(variants);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(err);
         } catch (IOException e) {
             Map<String, String> err = new HashMap<>();
             err.put("error", "Image upload failed: " + e.getMessage());
             return ResponseEntity.status(500).body(err);
         }
+    }
+
+    @PostMapping("/products/images/migrate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> migrateImages() {
+        return ResponseEntity.ok(imageOptimizationService.migrateExistingImages());
     }
 }

@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,6 +31,7 @@ public class ProductService {
     private final InventoryRepository inventoryRepository;
     private final InventoryTransactionRepository transactionRepository;
     private final DiscountRepository discountRepository;
+    private final ImageOptimizationService imageOptimizationService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -38,12 +40,14 @@ public class ProductService {
                           CategoryRepository categoryRepository,
                           InventoryRepository inventoryRepository,
                           InventoryTransactionRepository transactionRepository,
-                          DiscountRepository discountRepository) {
+                          DiscountRepository discountRepository,
+                          ImageOptimizationService imageOptimizationService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.inventoryRepository = inventoryRepository;
         this.transactionRepository = transactionRepository;
         this.discountRepository = discountRepository;
+        this.imageOptimizationService = imageOptimizationService;
     }
 
     public List<Product> getAllProducts() {
@@ -192,21 +196,7 @@ public class ProductService {
     }
 
     public String saveImageFile(MultipartFile file) throws IOException {
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
-
-        String fileName = UUID.randomUUID().toString() + extension;
-        Path targetLocation = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-        return "/uploads/" + fileName;
+        Map<String, String> variants = imageOptimizationService.processAndSaveImage(file);
+        return variants.get("imageUrl");
     }
 }

@@ -7,6 +7,8 @@ backend/target/
 backend/target/*
 backend/uploads/*
 !backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
 *.class
 *.jar
 *.war

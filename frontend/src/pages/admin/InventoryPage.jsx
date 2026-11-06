@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { productApi } from '../../api/productApi';
 import { inventoryApi } from '../../api/inventoryApi';
 import { getImageUrl } from '../../utils/imageUrl';
+import OptimizedImage from '../../components/OptimizedImage';
 import ProductModal from '../../components/ProductModal';
 import StockAdjustModal from '../../components/StockAdjustModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -130,9 +131,12 @@ const InventoryPage = () => {
                 {/* Image */}
                 <div className="relative h-40 bg-amber-50 overflow-hidden">
                   {p.imageUrl ? (
-                    <img src={getImageUrl(p.imageUrl)} alt={p.name}
+                    <OptimizedImage
+                      src={p.imageUrl}
+                      alt={p.name}
+                      variant="card"
                       className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                      onError={(e) => { e.target.style.display = 'none'; }} />
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-amber-200">
                       <Flame className="w-10 h-10" />

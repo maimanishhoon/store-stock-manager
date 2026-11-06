@@ -11,6 +11,8 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+RUN apk add --no-cache libwebp libwebp-tools
+
 RUN addgroup -S spring && adduser -S spring -G spring
 
 COPY --from=builder /app/target/*.jar app.jar
