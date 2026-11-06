@@ -14,7 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -85,19 +89,34 @@ public class OrderService {
             throw new IllegalArgumentException("Order number '" + orderNumber + "' already exists.");
         }
 
-        // 2. Pre-validate stock for all items to fail-fast before reserving anything
-        for (OrderItemRequest itemReq : request.getItems()) {
-            Product product = productRepository.findById(itemReq.getProductId())
+        // 2. Pre-validate stock with pessimistic row locks, sorted by productId to prevent deadlocks
+        List<OrderItemRequest> sortedItems = new ArrayList<>(request.getItems());
+        sortedItems.sort(Comparator.comparing(OrderItemRequest::getProductId));
+
+        Map<Long, Product> lockedProductMap = new HashMap<>();
+
+        for (OrderItemRequest itemReq : sortedItems) {
+            if (itemReq.getQuantity() == null || itemReq.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than zero.");
+            }
+
+            Product product = productRepository.findByIdWithLock(itemReq.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + itemReq.getProductId()));
 
             if (product.getProductStatus() != ProductStatus.ACTIVE) {
                 throw new IllegalArgumentException("Product '" + product.getName() + "' is currently inactive.");
             }
 
+            if (product.getAvailableStock() <= 0) {
+                throw new IllegalArgumentException("Product '" + product.getName() + "' is out of stock.");
+            }
+
             if (product.getAvailableStock() < itemReq.getQuantity()) {
                 throw new IllegalArgumentException("Insufficient available stock for '" + product.getName() +
                         "'. Requested: " + itemReq.getQuantity() + ", Available: " + product.getAvailableStock());
             }
+
+            lockedProductMap.put(product.getId(), product);
         }
 
         // 3. Build order and order items
@@ -113,7 +132,7 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         for (OrderItemRequest itemReq : request.getItems()) {
-            Product product = productRepository.findById(itemReq.getProductId()).get();
+            Product product = lockedProductMap.get(itemReq.getProductId());
 
             BigDecimal priceSnapshot = product.getFinalSellingPrice();
             OrderItem orderItem = new OrderItem(product, itemReq.getQuantity(), priceSnapshot);
@@ -163,19 +182,34 @@ public class OrderService {
         // 1. Generate unique order number
         String orderNumber = generateOrderNumber();
 
-        // 2. Pre-validate stock
-        for (OrderItemRequest itemReq : request.getItems()) {
-            Product product = productRepository.findById(itemReq.getProductId())
+        // 2. Pre-validate stock with pessimistic row locks, sorted by productId to prevent deadlocks
+        List<OrderItemRequest> sortedItems = new ArrayList<>(request.getItems());
+        sortedItems.sort(Comparator.comparing(OrderItemRequest::getProductId));
+
+        Map<Long, Product> lockedProductMap = new HashMap<>();
+
+        for (OrderItemRequest itemReq : sortedItems) {
+            if (itemReq.getQuantity() == null || itemReq.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than zero.");
+            }
+
+            Product product = productRepository.findByIdWithLock(itemReq.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + itemReq.getProductId()));
 
             if (product.getProductStatus() != ProductStatus.ACTIVE) {
-                throw new IllegalArgumentException("Product '" + product.getName() + "' is currently inactive.");
+                throw new IllegalArgumentException("Product '" + product.getName() + "' is no longer available.");
+            }
+
+            if (product.getAvailableStock() <= 0) {
+                throw new IllegalArgumentException("Product '" + product.getName() + "' is out of stock.");
             }
 
             if (product.getAvailableStock() < itemReq.getQuantity()) {
                 throw new IllegalArgumentException("Insufficient available stock for '" + product.getName() +
                         "'. Requested: " + itemReq.getQuantity() + ", Available: " + product.getAvailableStock());
             }
+
+            lockedProductMap.put(product.getId(), product);
         }
 
         // 3. Build order
@@ -195,7 +229,7 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         for (OrderItemRequest itemReq : request.getItems()) {
-            Product product = productRepository.findById(itemReq.getProductId()).get();
+            Product product = lockedProductMap.get(itemReq.getProductId());
             BigDecimal priceSnapshot = product.getFinalSellingPrice();
             OrderItem orderItem = new OrderItem(product, itemReq.getQuantity(), priceSnapshot);
             savedOrder.addItem(orderItem);

@@ -40,6 +40,9 @@ const CustomerStorePage = () => {
     }
   });
 
+  const [validatedProductsMap, setValidatedProductsMap] = useState({});
+  const [cartNotices, setCartNotices] = useState([]);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -56,7 +59,7 @@ const CustomerStorePage = () => {
   const [trackedOrders, setTrackedOrders] = useState([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
-  // Persist cart
+  // Persist cart to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('diwali_shop_cart', JSON.stringify(cart));
@@ -64,6 +67,62 @@ const CustomerStorePage = () => {
       console.warn('LocalStorage failed:', e);
     }
   }, [cart]);
+
+  // Synchronize and validate cart items with backend
+  const syncCartWithServer = async (cartToCheck = cart) => {
+    const entries = Object.entries(cartToCheck).filter(([_, qty]) => qty > 0);
+    if (entries.length === 0) {
+      setValidatedProductsMap({});
+      return;
+    }
+
+    try {
+      const itemsPayload = entries.map(([id, qty]) => ({
+        productId: Number(id),
+        quantity: qty,
+      }));
+
+      const res = await publicApi.validateCart(itemsPayload);
+      const { validItems = [], notices = [] } = res || {};
+
+      const newValidatedMap = {};
+      const newCart = {};
+
+      (validItems || []).forEach((item) => {
+        const p = item.product;
+        if (p && p.availableStock > 0 && p.productStatus === 'ACTIVE') {
+          newValidatedMap[p.id] = p;
+          newCart[p.id] = item.validQuantity;
+        }
+      });
+
+      setValidatedProductsMap((prev) => ({ ...prev, ...newValidatedMap }));
+
+      // Check if any cart entries were removed or adjusted
+      const hasDifferences =
+        Object.keys(newCart).length !== Object.keys(cartToCheck).length ||
+        Object.entries(newCart).some(([k, v]) => cartToCheck[k] !== v);
+
+      if (hasDifferences) {
+        setCart(newCart);
+        try {
+          localStorage.setItem('diwali_shop_cart', JSON.stringify(newCart));
+        } catch (e) {
+          console.warn('LocalStorage save error:', e);
+        }
+      }
+
+      if (notices && notices.length > 0) {
+        setCartNotices((prev) => {
+          const newNotices = notices.map((n) => n.message);
+          const combined = Array.from(new Set([...prev, ...newNotices]));
+          return combined;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to sync cart with server:', err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -77,6 +136,7 @@ const CustomerStorePage = () => {
       ]);
       setCategories(cats);
       setProducts(prods);
+      syncCartWithServer();
     } catch (err) {
       console.error('Failed to load store data:', err);
     } finally {
@@ -88,15 +148,37 @@ const CustomerStorePage = () => {
     fetchData();
   }, [selectedCategory, searchQuery]);
 
+  // Sync cart on mount and when window gets focus
+  useEffect(() => {
+    syncCartWithServer();
+
+    const handleFocus = () => {
+      fetchData();
+      syncCartWithServer();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // Sync cart when cart drawer opens
+  useEffect(() => {
+    if (isCartOpen) {
+      syncCartWithServer();
+    }
+  }, [isCartOpen]);
+
   // Cart Helpers
   const addToCart = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product || product.availableStock <= 0) return;
+    const product = products.find((p) => p.id === productId) || validatedProductsMap[productId];
+    if (!product || product.availableStock <= 0 || product.productStatus !== 'ACTIVE') return;
 
     setCart((prev) => {
       const current = prev[productId] || 0;
       if (current >= product.availableStock) return prev;
-      return { ...prev, [productId]: current + 1 };
+      const next = { ...prev, [productId]: current + 1 };
+      syncCartWithServer(next);
+      return next;
     });
   };
 
@@ -122,23 +204,29 @@ const CustomerStorePage = () => {
 
   const clearCart = () => {
     setCart({});
+    setValidatedProductsMap({});
+    setCartNotices([]);
   };
 
-  const totalItemsCount = Object.values(cart).reduce((a, b) => a + b, 0);
-
+  // Derive cart items strictly from valid, active, in-stock products
   const cartItemsList = Object.entries(cart)
     .map(([id, qty]) => {
-      const product = products.find((p) => p.id === Number(id));
-      if (!product) return null;
+      const numId = Number(id);
+      const product = products.find((p) => p.id === numId) || validatedProductsMap[numId];
+      if (!product || product.productStatus !== 'ACTIVE' || product.availableStock <= 0) return null;
+      const validQty = Math.min(qty, product.availableStock);
+      if (validQty <= 0) return null;
       return {
         product,
-        quantity: qty,
+        quantity: validQty,
         unitPrice: parseFloat(product.finalSellingPrice || product.sellingPrice),
         originalPrice: parseFloat(product.sellingPrice),
-        subtotal: parseFloat(product.finalSellingPrice || product.sellingPrice) * qty,
+        subtotal: parseFloat(product.finalSellingPrice || product.sellingPrice) * validQty,
       };
     })
     .filter(Boolean);
+
+  const totalItemsCount = cartItemsList.reduce((sum, item) => sum + item.quantity, 0);
 
   const cartSubtotal = cartItemsList.reduce((sum, item) => sum + item.subtotal, 0);
   const originalSubtotal = cartItemsList.reduce(
@@ -159,7 +247,7 @@ const CustomerStorePage = () => {
     }
 
     if (cartItemsList.length === 0) {
-      setOrderError('Your cart is empty.');
+      setOrderError('Your cart is empty or the selected items are no longer available.');
       return;
     }
 
@@ -179,13 +267,17 @@ const CustomerStorePage = () => {
       setPlacedOrder(newOrder);
       clearCart();
       setIsCartOpen(false);
+      fetchData();
     } catch (err) {
-      setOrderError(
+      const errorMsg =
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          'Failed to place order. Please check item availability.'
-      );
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to place order. Please check item availability.';
+      setOrderError(errorMsg);
+      // Immediately refresh catalog and cart to synchronize state with server
+      fetchData();
+      syncCartWithServer();
     } finally {
       setSubmittingOrder(false);
     }
@@ -547,6 +639,28 @@ const CustomerStorePage = () => {
               <div className="m-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{orderError}</span>
+              </div>
+            )}
+
+            {/* Cart synchronization notices (e.g. deactivated or out of stock items removed) */}
+            {cartNotices.length > 0 && (
+              <div className="mx-4 mt-2 space-y-2">
+                {cartNotices.map((notice, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start space-x-2 animate-in fade-in duration-200"
+                  >
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1 font-medium">{notice}</div>
+                    <button
+                      onClick={() => setCartNotices((prev) => prev.filter((_, i) => i !== idx))}
+                      className="text-amber-500 hover:text-amber-700"
+                      aria-label="Dismiss notice"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 

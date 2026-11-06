@@ -34,4 +34,9 @@ export const publicApi = {
     });
     return res.data;
   },
+
+  validateCart: async (items) => {
+    const res = await publicClient.post('/api/public/cart/validate', { items });
+    return res.data;
+  },
 };

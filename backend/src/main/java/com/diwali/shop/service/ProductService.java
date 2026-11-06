@@ -63,6 +63,13 @@ public class ProductService {
         );
     }
 
+    public List<Product> searchAvailableProducts(String query, Long categoryId) {
+        return productRepository.searchAvailablePublicProducts(
+                (query != null && !query.trim().isEmpty()) ? query.trim() : null,
+                categoryId
+        );
+    }
+
     @Transactional
     public Product createProduct(ProductRequest request, String username) {
         if (productRepository.existsByProductCode(request.getProductCode())) {
