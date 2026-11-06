@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Shield, Package, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -74,38 +74,6 @@ const LoginPage = () => {
             <span>{error}</span>
           </div>
         )}
-
-        {/* Demo Quick-Login Buttons */}
-        <div className="mb-6 p-3 bg-amber-50 rounded-2xl border border-amber-200">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-2 text-center">
-            Quick Demo Login Accounts
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
-                username === 'admin'
-                  ? 'border-amber-600 bg-amber-100 text-amber-900 ring-2 ring-amber-200'
-                  : 'border-gray-200 bg-white text-gray-700 hover:bg-amber-50'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5 text-amber-600" />
-              <span>Shop Admin</span>
-            </button>
-
-            <button
-              type="button"
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
-                username === 'packer'
-                  ? 'border-orange-600 bg-orange-100 text-orange-900 ring-2 ring-orange-200'
-                  : 'border-gray-200 bg-white text-gray-700 hover:bg-orange-50'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5 text-orange-600" />
-              <span>Packing Staff</span>
-            </button>
-          </div>
-        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
